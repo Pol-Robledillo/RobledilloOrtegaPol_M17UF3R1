@@ -37,12 +37,10 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     private float cameraSensitivity = 1f;
     private float xRotation = 0f;
     private float yRotation = 0f;
-    private Vector3 offset = new Vector3(0.872f, 2.095f, -1.654f);
 
     private float transitionSpeed = 2f;
     private float targetWeightLayer1 = 0f;
     private float targetWeightLayer2 = 0f;
-    private Quaternion targetRotation = Quaternion.Euler(0f, 0f, 0f);
     private bool isTransitioning = false;
 
     private void Awake()
@@ -79,18 +77,14 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
         xRotation += lookInput.x * cameraSensitivity;
         yRotation -= lookInput.y * cameraSensitivity;
 
-        yRotation = Mathf.Clamp(yRotation, -90f, 90f);
+        yRotation = Mathf.Clamp(yRotation, -60f, 60f);
 
         if (firstPerson)
         {
-            followObject.transform.rotation = Quaternion.Euler(yRotation, xRotation, 0f);
             mesh.transform.rotation = Quaternion.Euler(yRotation, xRotation, 0f);
         }
-        else
-        {
-            transform.rotation = Quaternion.Euler(0f, xRotation, 0f);
-            followObject.transform.rotation = Quaternion.Euler(yRotation, xRotation, 0f);
-        }
+        transform.rotation = Quaternion.Euler(0f, xRotation, 0f);
+        followObject.transform.rotation = Quaternion.Euler(yRotation, xRotation, 0f);
     }
     private void Move()
     {
@@ -131,7 +125,6 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
             isCrouching = true;
             targetWeightLayer1 = 0f;
             targetWeightLayer2 = 1f;
-            targetRotation = Quaternion.Euler(0f, 45f, 0f);
             if (!isTransitioning) StartCoroutine(SmoothWeightTransition());
         }
         else if (context.canceled)
@@ -139,7 +132,6 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
             isCrouching = false;
             targetWeightLayer1 = 1f;
             targetWeightLayer2 = 0f;
-            targetRotation = Quaternion.Euler(0f, 0f, 0f);
             if (!isTransitioning) StartCoroutine(SmoothWeightTransition());
         }
     }
@@ -148,21 +140,18 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
         isTransitioning = true;
         float currentWeight1 = animator.GetLayerWeight(1);
         float currentWeight2 = animator.GetLayerWeight(2);
-        Quaternion startRotation = mesh.transform.localRotation;
-
+        
         float elapsedTime = 0f;
         while (elapsedTime < 1f)
         {
             elapsedTime += Time.deltaTime * transitionSpeed;
             animator.SetLayerWeight(1, Mathf.Lerp(currentWeight1, targetWeightLayer1, elapsedTime));
             animator.SetLayerWeight(2, Mathf.Lerp(currentWeight2, targetWeightLayer2, elapsedTime));
-            mesh.transform.localRotation = Quaternion.Lerp(startRotation, targetRotation, elapsedTime);
             yield return null;
         }
 
         animator.SetLayerWeight(1, targetWeightLayer1);
         animator.SetLayerWeight(2, targetWeightLayer2);
-        mesh.transform.localRotation = targetRotation;
         isTransitioning = false;
     }
     public void OnSprint(InputAction.CallbackContext context)
@@ -329,8 +318,8 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
             firstPerson = true;
             if (activeCamera != cameras[1])
             {
-                cameras[1].SetActive(true);
-                cameras[0].SetActive(false);
+                cameras[1].GetComponent<CinemachineVirtualCamera>().Priority = 10;
+                cameras[0].GetComponent<CinemachineVirtualCamera>().Priority = 1;
                 activeCamera = cameras[1];
             }
         }
@@ -343,8 +332,8 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
             firstPerson = false;
             if (activeCamera != cameras[0])
             {
-                cameras[0].SetActive(true);
-                cameras[1].SetActive(false);
+                cameras[0].GetComponent<CinemachineVirtualCamera>().Priority = 10;
+                cameras[1].GetComponent<CinemachineVirtualCamera>().Priority = 1;
                 activeCamera = cameras[0];
             }
         }
