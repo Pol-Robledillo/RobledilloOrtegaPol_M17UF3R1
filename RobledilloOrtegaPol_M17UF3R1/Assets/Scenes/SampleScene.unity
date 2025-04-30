@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: d48a7646f5d0547e889733d84b50cb9f, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!20 &6805629
 Camera:
   m_ObjectHideFlags: 0
@@ -1347,7 +1347,6 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194229}
   - component: {fileID: 963194226}
-  - component: {fileID: 963194230}
   - component: {fileID: 963194231}
   m_Layer: 0
   m_Name: Main Camera
@@ -1403,7 +1402,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 183
+    m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1464,7 +1463,7 @@ MonoBehaviour:
   m_CameraActivatedEvent:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &963194230
+--- !u!114 &963194231
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1473,35 +1472,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 963194225}
   m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1746a5c36f69c142952f65e9e30afc6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  terrain: {fileID: 1250167337}
-  treePrototypeIndices: 00000000010000000200000003000000
-  treeDensity: 100
-  selectedTextureIndex: 2
-  maxHeight: 1000
-  minHeight: 0
-  brushSize: 40
-  randomizeHeight: 1
-  randomizeWidth: 1
-  heightVariation: 0.2
-  widthVariation: 0.2
---- !u!114 &963194231
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f3d9adcd17b0c5c4f90f4017deb26078, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   terrain: {fileID: 1250167337}
-  detailLayerIndices: 0000000001000000
-  densities: 1e0000001e000000
+  detailLayerIndices: 00000000
+  densities: 30750000
   selectedTextureIndex: 0
 --- !u!1001 &1177433257
 PrefabInstance:
@@ -1700,6 +1676,9 @@ MonoBehaviour:
     layer: {fileID: 8574412962073106934, guid: 69debc15b685aef4aa7bb2783ddd8a2b, type: 2}
     modifierStack:
     - {fileID: 147182508}
+  - enabled: 1
+    layer: {fileID: 8574412962073106934, guid: 7f71caa9759bc3e458d6695dffda33df, type: 2}
+    modifierStack: []
   autoRepaint: 0
   terrainListeners: []
   bounds:
