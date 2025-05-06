@@ -12,10 +12,15 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     public Rigidbody rb;
     public List<GameObject> cameras;
     public GameObject activeCamera;
+    public List<GameObject> weapons;
     public GameObject weapon;
     public Animator animator;
     public GameObject mesh;
 
+    public float shootCooldown = 0.5f;
+    public bool shootInCooldown = false;
+    public bool hasBurstWeapon = false;
+    public bool hasAutoWeapon = false;
     public bool isWaiting = true;
     private bool isWalking = false;
     private bool isSprinting = false;
@@ -190,6 +195,7 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     {
         animator.SetTrigger("jump");
         yield return new WaitForSeconds(0.1f);
+        rb.AddForce(Vector3.up * 30f, ForceMode.Impulse);
         while (animator.GetCurrentAnimatorStateInfo(0).IsName("Jump"))
         {
             yield return null;
@@ -204,22 +210,24 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     {
         if (isAuto)
         {
-            if (context.started && isWaiting)
+            if (context.started && isWaiting && !shootInCooldown)
             {
                 isWaiting = false;
                 animator.SetBool("shooting", true);
             } if (context.canceled)
             {
+                StartCoroutine(ShootCooldown());
                 animator.SetBool("shooting", false);
                 isWaiting = true;
             }
         }
         else
         {
-            if (context.started && isWaiting)
+            if (context.started && isWaiting && !shootInCooldown)
             {
                 isWaiting = false;
                 animator.SetTrigger("shoot");
+                StartCoroutine(ShootCooldown());
                 StartCoroutine(PerformShooting());
             }
         }
@@ -232,6 +240,12 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
             yield return null;
         }
         isWaiting = true;
+    }
+    public IEnumerator ShootCooldown()
+    {
+        shootInCooldown = true;
+        yield return new WaitForSeconds(shootCooldown);
+        shootInCooldown = false;
     }
     public void OnAim(InputAction.CallbackContext context)
     {
@@ -255,11 +269,17 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     }
     public void OnSwapShotgun(InputAction.CallbackContext context)
     {
-        if (context.started)
+        if (context.started && weapon != weapons[0])
         {
             isShotgun = true;
             isBurst = false;
             isAuto = false;
+            foreach (GameObject w in weapons)
+            {
+                w.SetActive(false);
+            }
+            weapon = weapons[0];
+            weapon.SetActive(true);
             animator.SetBool("singleShot", isShotgun);
             animator.SetBool("burstShot", isBurst);
             animator.SetBool("autoShot", isAuto);
@@ -267,11 +287,17 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     }
     public void OnSwapBurst(InputAction.CallbackContext context)
     {
-        if (context.started)
+        if (context.started && hasBurstWeapon && weapon != weapons[1])
         {
             isShotgun = false;
             isBurst = true;
             isAuto = false;
+            foreach (GameObject w in weapons)
+            {
+                w.SetActive(false);
+            }
+            weapon = weapons[1];
+            weapon.SetActive(true);
             animator.SetBool("singleShot", isShotgun);
             animator.SetBool("burstShot", isBurst);
             animator.SetBool("autoShot", isAuto);
@@ -279,11 +305,17 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     }
     public void OnSwapAuto(InputAction.CallbackContext context)
     {
-        if (context.started)
+        if (context.started && hasAutoWeapon && weapon != weapons[2])
         {
             isShotgun = false;
             isBurst = false;
             isAuto = true;
+            foreach (GameObject w in weapons)
+            {
+                w.SetActive(false);
+            }
+            weapon = weapons[2];
+            weapon.SetActive(true);
             animator.SetBool("singleShot", isShotgun);
             animator.SetBool("burstShot", isBurst);
             animator.SetBool("autoShot", isAuto);
