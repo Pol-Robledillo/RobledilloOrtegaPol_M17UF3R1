@@ -48,6 +48,7 @@ public class WeaponPickup : MonoBehaviour
                         player.hasAutoWeapon = true;
                         break;
                 }
+                Destroy(gameObject);
             }
         }
     }

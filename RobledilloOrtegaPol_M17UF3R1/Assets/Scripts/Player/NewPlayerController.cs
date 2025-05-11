@@ -4,8 +4,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Cinemachine;
 using static Player;
+using TMPro;
 
-public class NewPlayerController : MonoBehaviour, IMovementActions, IShootActions, IWeaponSwapActions, IOtherActions
+public class NewPlayerController : MonoBehaviour, IMovementActions, IShootActions, IWeaponSwapActions, IOtherActions, IDamageable
 {
     private static NewPlayerController instance;
     private Player playerActions;
@@ -16,8 +17,9 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     public GameObject weapon;
     public Animator animator;
     public GameObject mesh;
+    public TextMeshProUGUI healthCanvas;
 
-    public float shootCooldown = 0.5f;
+    public float shootCooldown = 0.25f;
     public bool shootInCooldown = false;
     public bool hasBurstWeapon = false;
     public bool hasAutoWeapon = false;
@@ -29,9 +31,12 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     private bool isBurst = false;
     private bool isAuto = false;
     private bool firstPerson = false;
+    private bool canWalk = true;
 
     private Vector2 movementInput;
     private Vector2 lookInput;
+
+    public float health = 100f;
 
     private float moveSpeed = 10f;
     private float walkSpeed = 5f;
@@ -69,6 +74,10 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
         playerActions.Other.SetCallbacks(this);
         activeCamera = cameras[0];
     }
+    private void Start()
+    {
+        transform.position = GameManager.instance.RecoverPosition();
+    }
     private void FixedUpdate()
     {
         Move();
@@ -93,15 +102,24 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
     }
     private void Move()
     {
-        float xValue = (movementInput.x > 0.7 && movementInput.x < 0.8f) || (movementInput.x < -0.7f && movementInput.x > -0.8f) ? 0 : movementInput.x;
-        float yValue = movementInput.y > 0 ? isSprinting ? 1.5f : isWalking ? 0.5f : 1 : movementInput.y;
-        animator.SetFloat("x", xValue);
-        animator.SetFloat("y", yValue);
-        Vector3 moveDirection = new Vector3(movementInput.x, 0, movementInput.y);
-        moveDirection = transform.TransformDirection(moveDirection);
-        moveSpeed = movementInput.y > 0 ? isSprinting ? sprintSpeed : isWalking || isCrouching ? walkSpeed : runSpeed : walkSpeed;
-        moveDirection *= moveSpeed;
-        rb.velocity = new Vector3(moveDirection.x, rb.velocity.y, moveDirection.z);
+        if (canWalk)
+        {
+            float xValue = (movementInput.x > 0.7 && movementInput.x < 0.8f) || (movementInput.x < -0.7f && movementInput.x > -0.8f) ? 0 : movementInput.x;
+            float yValue = movementInput.y > 0 ? isSprinting ? 1.5f : isWalking ? 0.5f : 1 : movementInput.y;
+            animator.SetFloat("x", xValue);
+            animator.SetFloat("y", yValue);
+            Vector3 moveDirection = new Vector3(movementInput.x, 0, movementInput.y);
+            moveDirection = transform.TransformDirection(moveDirection);
+            moveSpeed = movementInput.y > 0 ? isSprinting ? sprintSpeed : isWalking || isCrouching ? walkSpeed : runSpeed : walkSpeed;
+            moveDirection *= moveSpeed;
+            rb.velocity = new Vector3(moveDirection.x, rb.velocity.y, moveDirection.z);
+        }
+        else
+        {
+            animator.SetFloat("x", 0);
+            animator.SetFloat("y", 0);
+            rb.velocity = new Vector3(0, rb.velocity.y, 0);
+        }
     }
     private void OnEnable()
     {
@@ -214,6 +232,7 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
             {
                 isWaiting = false;
                 animator.SetBool("shooting", true);
+                StartCoroutine(PermormAutoShot());
             } if (context.canceled)
             {
                 StartCoroutine(ShootCooldown());
@@ -232,8 +251,31 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
             }
         }
     }
+    public IEnumerator PermormAutoShot()
+    {
+        if (isAuto)
+        {
+            while (animator.GetBool("shooting"))
+            {
+                weapon.GetComponent<GunBehaviour>().Shoot();
+                yield return new WaitForSeconds(0.05f);
+            }
+        }
+    }
     public IEnumerator PerformShooting()
     {
+        if (isShotgun)
+        {
+            weapon.GetComponent<GunBehaviour>().Shoot();
+        }
+        else if (isBurst)
+        {
+            for(int i = 0; i < 3; i++)
+            {
+                weapon.GetComponent<GunBehaviour>().Shoot();
+                yield return new WaitForSeconds(0.05f);
+            }
+        }
         yield return new WaitForSeconds(0.1f);
         while (animator.GetCurrentAnimatorStateInfo(0).IsName("Shoot_SingleShot_AR") || animator.GetCurrentAnimatorStateInfo(0).IsName("Shoot_BurstShot_AR"))
         {
@@ -253,10 +295,28 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
         {
             animator.SetTrigger("aim");
             animator.SetBool("aiming", true);
+            if (!firstPerson)
+            {
+                if (activeCamera != cameras[2])
+                {
+                    cameras[2].GetComponent<CinemachineVirtualCamera>().Priority = 10;
+                    cameras[0].GetComponent<CinemachineVirtualCamera>().Priority = 1;
+                    activeCamera = cameras[2];
+                }
+            }
         }
         else if (context.canceled)
         {
             animator.SetBool("aiming", false);
+            if (!firstPerson)
+            {
+                if (activeCamera != cameras[0])
+                {
+                    cameras[0].GetComponent<CinemachineVirtualCamera>().Priority = 10;
+                    cameras[2].GetComponent<CinemachineVirtualCamera>().Priority = 1;
+                    activeCamera = cameras[0];
+                }
+            }
         }
     }
     public void OnReload(InputAction.CallbackContext context)
@@ -326,6 +386,7 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
         if (context.started && isWaiting)
         {
             isWaiting = false;
+            canWalk = false;
             weapon.SetActive(false);
             StartCoroutine(PerformEmote());
         }
@@ -342,6 +403,7 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
         animator.SetLayerWeight(1, 1);
         weapon.SetActive(true);
         isWaiting = true;
+        canWalk = true;
     }
     public void OnSwapToFirstPerson(InputAction.CallbackContext context)
     {
@@ -369,5 +431,34 @@ public class NewPlayerController : MonoBehaviour, IMovementActions, IShootAction
                 activeCamera = cameras[0];
             }
         }
+    }
+
+    public void TakeDamage(int damage)
+    {
+        health -= damage;
+        healthCanvas.text = health.ToString();
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
+    public void Die()
+    {
+        animator.SetTrigger("die");
+        rb.velocity = Vector3.zero;
+        isWaiting = false;
+        canWalk = false;
+        StartCoroutine(WaitForDeath());
+    }
+
+    private IEnumerator WaitForDeath()
+    {
+        yield return new WaitForSeconds(1.5f);
+        health = 100f;
+        healthCanvas.text = health.ToString();
+        transform.position = GameManager.instance.RecoverPosition();
+        isWaiting = true;
+        canWalk = true;
     }
 }
